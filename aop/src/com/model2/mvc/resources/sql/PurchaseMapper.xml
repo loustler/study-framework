@@ -1,0 +1,284 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="PurchaseMapper">
+	<resultMap id="purchaseMap" type="purchase">
+
+		<result property="tranNo" column="tranNo" jdbcType="NUMERIC" />
+		<result property="paymentOption" column="payment" jdbcType="VARCHAR" />
+		<result property="receiverName" column="receivername" jdbcType="VARCHAR" />
+		<result property="receiverPhone" column="receiverPhone"
+			jdbcType="VARCHAR" />
+		<result property="dlvyAddr" column="tranAddr" jdbcType="VARCHAR" />
+		<result property="dlvyReq" column="request" jdbcType="VARCHAR" />
+		<result property="tranCode" column="tranCode" jdbcType="VARCHAR" />
+		<result property="orderDate" column="orderDate" jdbcType="VARCHAR" />
+		<result property="dlvyDate" column="dlvyDate" jdbcType="VARCHAR" />
+
+		<association property="purchaseProd" javaType="product">
+			<id property="prodNo" column="prodNo" jdbcType="NUMERIC" />
+			<result property="prodName" column="prodName" />
+			<result property="price" column="price" jdbcType="NUMERIC" />
+		</association>
+
+		<association property="buyer" javaType="user">
+			<id property="userId" column="userId" jdbcType="VARCHAR" />
+		</association>
+	</resultMap>
+
+	<resultMap type="product" id="productMap">
+		<result property="prodNo" column="prod_no" jdbcType="NUMERIC" />
+		<result property="prodName" column="prod_name" jdbcType="VARCHAR" />
+		<result property="prodDetail" column="prod_detail" jdbcType="VARCHAR" />
+		<result property="manuDay" column="manufacture_day" jdbcType="VARCHAR" />
+		<result property="price" column="price" jdbcType="NUMERIC" />
+		<result property="fileName" column="image_file" jdbcType="VARCHAR" />
+		<result property="regDate" column="reg_date" jdbcType="DATE" />
+		<result property="proTranCode" column="tran_status_code"
+			jdbcType="VARCHAR" />
+	</resultMap>
+
+	<select id="selectProduct" resultType="product">
+		SELECT prod_no, prod_name,
+		prod_detail, manufacture_day,
+		price,
+		image_file, reg_date
+		FROM product
+	</select>
+
+	<insert id="addPurchase" parameterType="purchase">
+		INSERT INTO transaction
+		VALUES
+		(
+		seq_transaction_tran_no.nextval,
+		#{purchaseProd.prodNo:NUMERIC},
+		#{buyer.userId:VARCHAR},
+		#{paymentOption:VARCHAR},
+		#{receiverName:VARCHAR},
+		#{receiverPhone:VARCHAR},
+		#{dlvyAddr:VARCHAR},
+		#{dlvyReq:VARCHAR},
+		'1',
+		#{orderDate:DATE},
+		#{dlvyDate:DATE}
+		)
+	</insert>
+
+	<select id="getPurchase" parameterType="int" resultMap="purchaseMap">
+		<!-- 여기부터 -->
+		SELECT
+		t.tran_no AS tranNo,
+		t.prod_no AS prodNo,
+		t.buyer_id AS userId,
+		t.payment_option AS payment,
+		t.receiver_name AS receiverName,
+		t.receiver_phone AS receiverPhone,
+		t.demailaddr AS tranAddr,
+		t.dlvy_request AS request,
+		t.tran_status_code AS tranCode,
+		t.order_data
+		AS orderDate,
+		t.dlvy_date AS dlvyDate,
+		p.prod_name AS prodName,
+		p.price
+		AS price
+		FROM transaction t, product p
+		<where>
+			t.tran_no = #{value}
+		</where>
+	</select>
+
+	<select id="getPurchaseProd" parameterType="int" resultMap="purchaseMap">
+		<!-- 여기부터 -->
+		SELECT
+		t.tran_no AS tranNo,
+		t.prod_no AS prodNo,
+		t.demailaddr AS
+		tranAddr,
+		t.tran_status_code AS tranCode
+		FROM transaction t
+		<where>
+			t.prod_no = #{value}
+		</where>
+	</select>
+
+
+	<update id="updatePurchase" parameterType="purchase">
+		UPDATE transaction
+		<set>
+			<if test="paymentOption !=null">payment_option = #{paymentOption},</if>
+			<if test="receiverName !=null">receiver_name = #{receiverName},</if>
+			<if test="receiverPhone !=null">receiver_phone = #{receiverPhone},</if>
+			<if test="dlvyAddr != null"> demailaddr = #{dlvyAddr},</if>
+			<if test="dlvyReq != null">dlvy_request = #{dlvyReq},</if>
+			<if test="dlvyDate != null">dlvy_date = #{dlvyDate}</if>
+		</set>
+		WHERE tran_no = #{tranNo}
+	</update>
+
+	<update id="updateTranCode" parameterType="purchase">
+		UPDATE transaction
+		<set>
+			<if test="tranCode != null">tran_status_code = #{tranCode}</if>
+		</set>
+		WHERE tran_no = #{tranNo}
+	</update>
+
+	<delete id="removePurchase" parameterType="int">
+		DELETE
+		FROM purchase
+		WHERE
+		tran_no = #{value}
+	</delete>
+
+	<select id="getPurchaseList" resultMap="purchaseMap"
+		parameterType="map">
+		SELECT * FROM (
+		SELECT inner_table.*, ROWNUM AS row_seq
+		FROM (
+		SELECT
+		t.tran_no AS tranNo,
+		t.prod_no AS prodNo,
+		t.buyer_id AS userId,
+		t.payment_option AS payment,
+		t.receiver_name AS receiverName,
+		t.receiver_phone AS receiverPhone,
+		t.demailaddr AS tranAddr,
+		t.dlvy_request AS request,
+		t.tran_status_code AS tranCode,
+		t.order_data
+		AS orderDate,
+		t.dlvy_date AS dlvyDate,
+		p.prod_name AS prodName,
+		p.price
+		AS price
+		FROM transaction t, product p
+		WHERE
+		t.buyer_id = #{userId} AND
+		p.prod_no = t.prod_no
+		<if test="sort != 0">
+			<if test="sort == 100">
+				ORDER BY prod_name
+			</if>
+
+			<if test="sort == 101">
+				ORDER BY prod_name DESC
+			</if>
+		</if>
+		)
+		inner_table
+
+		WHERE ROWNUM <![CDATA[ < ]]>
+		= #{search.currentPage} * #{search.pageSize}
+		)
+		WHERE
+		row_seq
+		BETWEEN ((
+		#{search.currentPage}
+		-1 ) * #{search.pageSize} +1 ) AND
+		(
+		#{search.currentPage}
+		* #{search.pageSize} )
+
+	</select>
+
+	<select id="getSaleList" resultMap="productMap" parameterType="search">
+		SELECT * FROM (
+		SELECT inner_table.*, ROWNUM AS row_seq
+		FROM (
+		SELECT
+		p.
+		prod_no, p.prod_name, p.prod_detail, p.manufacture_day, p.price,
+		p.image_file,
+		p.reg_date, t.tran_status_code
+		FROM product p, transaction
+		t
+		<where>
+			p.prod_no = t.prod_no(+)
+			<if test="searchKeyword != null">
+				<if test="searchCondition==0">
+					AND (p.prod_name LIKE '%' || #{searchKeyword} OR
+					p.prod_name LIKE '%' ||
+					#{searchKeyword} || '%' OR
+					p.prod_name LIKE
+					#{searchKeyword} ||
+					'%')
+				</if>
+				<if test="searchCondition==1">
+					AND p.price <![CDATA[ < ]]>=
+					#{price}
+				</if>
+				<if test="searchCondition==2">
+					AND p.price <![CDATA[ >]]>=
+					#{price}
+				</if>
+			</if>
+		</where>
+		<if test="sort != 0">
+			<if test="sort == 100">
+				ORDER BY price
+			</if>
+
+			<if test="sort == 101">
+				ORDER BY price DESC
+			</if>
+		</if>
+		)
+		inner_table
+
+		WHERE ROWNUM <![CDATA[ < ]]>
+		= #{currentPage} * #{pageSize}
+		)
+		WHERE
+		row_seq
+		BETWEEN (( #{currentPage}
+		-1 ) * #{pageSize} +1 ) AND
+		( #{currentPage}
+		* #{pageSize} )
+
+	</select>
+
+
+	<select id="countPurchaseData" resultType="int" parameterType="map">
+		SELECT
+		COUNT(*)
+		FROM transaction
+		WHERE buyer_id = #{userId}
+	</select>
+
+	<select id="countSaleData" resultType="int" parameterType="search">
+		SELECT
+		COUNT(*)
+		FROM product p, transaction t
+		<where>
+			p.prod_no = t.prod_no(+)
+			<choose>
+				<when test="searchCondition==0">
+					AND (p.prod_name LIKE '%' || #{searchKeyword} OR
+					p.prod_name
+					LIKE
+					'%'
+					||
+					#{searchKeyword} || '%' OR
+					p.prod_name LIKE
+					#{searchKeyword}
+					||
+					'%')
+				</when>
+
+				<when test="searchCondition==1">
+					AND p.price <![CDATA[ < ]]>=
+					#{price}
+				</when>
+				<when test="searchCondition==2">
+					AND p.price <![CDATA[ >]]>=
+					#{price}
+				</when>
+			</choose>
+		</where>
+	</select>
+
+</mapper>

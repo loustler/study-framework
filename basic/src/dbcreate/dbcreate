@@ -1,0 +1,50 @@
+//Users
+CREATE TABLE users(
+		user_id		VARCHAR(20)	primary key,
+		user_name	VARCHAR(50) not null,
+		password	VARCHAR(10)	not null,
+		role		VARCHAR(5)	CKECK = USER?,
+		ssn			VARCHAR(13),
+		cell_phone	VARCHAR(14),
+		addr		VARCHAR(100),
+		email		VARCHAR(50),
+		reg_date	DATE,
+);
+
+//Users
+CREATE TABLE product(
+		prod_no			number	primary key,
+		prod_name		varchar(10) not null,
+		prod_deail			varchar(10)	not null,
+		birthday	varchar(20)	not null,
+		birth_kind	varchar(10),
+		grade		varchar(20),
+		job			varchar(20),
+		part		varchar(20),
+		marry		varchar(10),
+		child		varchar(10),
+		hnum		varchar(20),		
+		locat		varchar(10) not null,
+		pnum		varchar(20),
+		tel			varchar(10) not null,
+		addr		varchar(50)
+);
+
+//Users
+CREATE TABLE users(
+		no			number	primary key,
+		name		varchar(10) not null,
+		sex			varchar(10)	not null,
+		birthday	varchar(20)	not null,
+		birth_kind	varchar(10),
+		grade		varchar(20),
+		job			varchar(20),
+		part		varchar(20),
+		marry		varchar(10),
+		child		varchar(10),
+		hnum		varchar(20),		
+		locat		varchar(10) not null,
+		pnum		varchar(20),
+		tel			varchar(10) not null,
+		addr		varchar(50)
+);
